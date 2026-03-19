@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Planta de Escaldado</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+
+<style>
+:root{
+  --bg:#0D1B2A;
+  --bg-2:#091320;
+  --panel:#132336;
+  --panel-2:#0B1522;
+  --line:#2B3C51;
+  --text:#FFFFFF;
+  --muted:#C8D2DD;
+  --orange:#F97316;
+  --yellow:#FACC15;
+  --blue:#3B82F6;
+  --green:#22C55E;
+  --red:#EF4444;
+  --shadow:0 18px 40px rgba(0,0,0,.28);
+  --radius:18px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family:"Segoe UI", Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(249,115,22,.08), transparent 30%),
+    radial-gradient(circle at top right, rgba(250,204,21,.06), transparent 26%),
+    var(--bg);
+  color:var(--text);
+}
+
+.hidden{ display:none !important; }
+
+.login-wrap{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+
+.login-card{
+  width:min(430px, 100%);
+  background:linear-gradient(180deg, rgba(19,35,54,.98), rgba(11,21,34,.98));
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  padding:26px;
+}
+
+.brand{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  margin-bottom:22px;
+}
+
+.brand-mark{
+  width:44px;
+  height:44px;
+  border-radius:14px;
+  background:linear-gradient(135deg, var(--orange), var(--yellow));
+  box-shadow:0 10px 22px rgba(249,115,22,.25);
+  flex:0 0 auto;
+}
+
+.brand h1{
+  margin:0;
+  font-size:1.1rem;
+  line-height:1.2;
+}
+
+.brand p{
+  margin:4px 0 0;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.field{ margin-top:14px; }
+
+label{
+  display:block;
+  margin:0 0 8px;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.input, .select{
+  width:100%;
+  border:1px solid var(--line);
+  background:#07111B;
+  color:var(--text);
+  border-radius:12px;
+  padding:11px 13px;
+  outline:none;
+  transition:.18s ease;
+  font-size:.95rem;
+}
+.input:focus, .select:focus{
+  border-color:rgba(249,115,22,.8);
+  box-shadow:0 0 0 3px rgba(249,115,22,.12);
+}
+
+.btn{
+  border:0;
+  border-radius:12px;
+  padding:11px 14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s ease;
+}
+.btn:hover{ transform:translateY(-1px); }
+.btn-primary{ background:linear-gradient(135deg, var(--orange), #fb923c); color:#fff; }
+.btn-secondary{ background:linear-gradient(135deg, var(--yellow), #fde047); color:#111827; }
+.btn-danger{ background:#f87171; color:#111827; }
+.btn-ghost{
+  background:transparent;
+  color:var(--muted);
+  border:1px solid var(--line);
+}
+
+.helper{
+  color:var(--muted);
+  font-size:.84rem;
+  line-height:1.45;
+  margin-top:14px;
+}
+
+/* APP LAYOUT */
+.app{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:280px 1fr;
+}
+
+.sidebar{
+  background:linear-gradient(180deg, rgba(11,21,34,.98), rgba(7,13,20,.98));
+  border-right:1px solid rgba(255,255,255,.06);
+  padding:20px 16px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow:auto;
+}
+
+.userbox{
+  margin-top:14px;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.user-name{
+  margin:0 0 6px;
+  font-size:1.02rem;
+  font-weight:800;
+  word-break:break-word;
+}
+
+.user-meta{
+  margin:0;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.nav{
+  margin-top:16px;
+  display:grid;
+  gap:10px;
+}
+
+.nav button{
+  width:100%;
+  text-align:left;
+  padding:12px 14px;
+  background:#091520;
+  color:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  cursor:pointer;
+  font-weight:700;
+}
+.nav button.active{
+  border-color:rgba(249,115,22,.65);
+  background:linear-gradient(135deg, rgba(249,115,22,.18), rgba(250,204,21,.08));
+}
+
+.content{
+  padding:20px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.title h2{
+  margin:0;
+  font-size:1.35rem;
+}
+.title p{
+  margin:6px 0 0;
+  color:var(--muted);
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 13px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);
+  color:#fff;
+  font-size:.92rem;
+}
+
+.kpis{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:14px;
+  margin-bottom:16px;
+}
+
+.kpi{
+  background:linear-gradient(180deg, rgba(19,35,54,.95), rgba(11,21,34,.95));
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:20px;
+  padding:16px;
+  box-shadow:var(--shadow);
+  min-height:104px;
+  position:relative;
+  overflow:hidden;
+}
+.kpi::after{
+  content:"";
+  position:absolute;
+  right:-18px;
+  bottom:-18px;
+  width:88px;
+  height:88px;
+  border-radius:999px;
+  background:radial-gradient(circle, rgba(249,115,22,.16), transparent 65%);
+}
+.kpi .label{
+  color:var(--muted);
+  font-size:.86rem;
+  margin-bottom:8px;
+}
+.kpi .value{
+  font-size:1.9rem;
+  font-weight:900;
+  letter-spacing:-.02em;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:390px 1fr;
+  gap:16px;
+  align-items:start;
+}
+
+.panel{
+  background:linear-gradient(180deg, rgba(19,35,54,.95), rgba(11,21,34,.95));
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:22px;
+  box-shadow:var(--shadow);
+  padding:16px;
+}
+
+.panel h3{
+  margin:0 0 14px;
+  font-size:1.02rem;
+}
+
+.stack{ display:grid; gap:12px; }
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.actions .btn{
+  width:auto;
+  min-width:136px;
+}
+
+.subtle{
+  color:var(--muted);
+  font-size:.86rem;
+}
+
+.table-wrap{
+  overflow:auto;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.06);
+  margin-top:12px;
+}
+
+table{
+  width:100%;
+  min-width:980px;
+  border-collapse:collapse;
+  background:rgba(7,17,27,.68);
+}
+thead th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:#08101A;
+  color:#D7E2EE;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-size:.78rem;
+  text-align:left;
+  padding:13px 12px;
+  border-bottom:1px solid var(--line);
+}
+tbody td{
+  padding:11px 12px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  vertical-align:top;
+  font-size:.93rem;
+}
+tbody tr:hover{ background:rgba(255,255,255,.03); }
+
+.table-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.table-actions .btn{
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:.8rem;
+  min-width:auto;
+}
+
+.section{ display:none; }
+.section.active{ display:block; }
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:.76rem;
+  font-weight:800;
+  border:1px solid transparent;
+}
+.badge.admin{
+  background:rgba(37,99,235,.16);
+  color:#dce8ff;
+  border-color:rgba(37,99,235,.36);
+}
+.badge.operador{
+  background:rgba(34,197,94,.14);
+  color:#dfffea;
+  border-color:rgba(34,197,94,.32);
+}
+.badge.disabled{
+  background:rgba(239,68,68,.14);
+  color:#ffe0e0;
+  border-color:rgba(239,68,68,.32);
+}
+
+.user-admin-card{
+  margin-top:16px;
+  padding:14px;
+  border-radius:18px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.user-item{
+  display:grid;
+  grid-template-columns:1.2fr .8fr .8fr 1fr auto;
+  gap:10px;
+  align-items:center;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.user-item:last-child{ border-bottom:0; }
+
+.switch{
+  width:46px;
+  height:26px;
+  border-radius:999px;
+  background:#334155;
+  border:0;
+  position:relative;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.switch::after{
+  content:"";
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:#fff;
+  transition:.2s ease;
+}
+.switch.on{
+  background:linear-gradient(135deg, var(--orange), var(--yellow));
+}
+.switch.on::after{ left:23px; }
+
+.toggle-box{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.chart-box{
+  height:300px;
+  margin-top:12px;
+  padding:12px;
+  border-radius:18px;
+  background:rgba(7,17,27,.5);
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.panel .input, .panel .select{
+  padding:10px 12px;
+  border-radius:11px;
+  font-size:.93rem;
+}
+.panel .btn{
+  padding:10px 13px;
+}
+
+@media (max-width: 1180px){
+  .app{ grid-template-columns:1fr; }
+  .sidebar{
+    position:relative;
+    height:auto;
+  }
+  .layout{
+    grid-template-columns:1fr;
+  }
+  .kpis{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px){
+  .kpis,
+  .row,
+  .user-item{
+    grid-template-columns:1fr;
+  }
+  .actions .btn{
+    width:100%;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="loginView" class="login-wrap">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1>Planta de Escaldado</h1>
+        <p>Ingreso al sistema corporativo</p>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="loginUser">Usuario</label>
+      <input class="input" id="loginUser" autocomplete="username" placeholder="Usuario" />
+    </div>
+
+    <div class="field">
+      <label for="loginPass">Contraseña</label>
+      <input class="input" id="loginPass" type="password" autocomplete="current-password" placeholder="Contraseña" />
+    </div>
+
+    <div class="field">
+      <button class="btn btn-primary" id="loginBtn">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<div id="appView" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1>Planta de Escaldado</h1>
+        <p>Dashboard corporativo</p>
+      </div>
+    </div>
+
+    <div class="userbox">
+      <p class="user-name" id="currentUserName">ADMIN</p>
+      <p class="user-meta" id="currentUserMeta">Administrador</p>
+      <p class="user-meta" id="currentUserState">Activo</p>
+    </div>
+
+    <div class="nav">
+      <button class="active" data-section-btn="sectionRecords">Registros</button>
+      <button data-section-btn="sectionUsers" id="navUsersBtn" class="hidden">Gestión de usuarios</button>
+    </div>
+
+    <div class="userbox" style="margin-top:18px;">
+      <div class="actions">
+        <button class="btn btn-ghost" id="logoutBtn">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="topbar">
+      <div class="title">
+        <h2>Registrar Datos de Planta de Escaldado</h2>
+        <p>Captura, consulta y control de producción por turno, secadora y causa.</p>
+      </div>
+      <div class="pill">Sesión activa</div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">Producción visible</div>
+        <div class="value" id="kpiReal">0</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Meta</div>
+        <div class="value">42</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Cumplimiento</div>
+        <div class="value" id="kpiCumple">0%</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Horas de paro</div>
+        <div class="value" id="kpiHoras">0</div>
+      </div>
+    </div>
+
+    <section class="section active" id="sectionRecords">
+      <div class="layout">
+        <div class="panel">
+          <h3>Nuevo registro</h3>
+
+          <div class="stack">
+            <div class="field">
+              <label for="regDate">Fecha</label>
+              <input class="input" type="date" id="regDate" />
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label for="regTurn">Turno</label>
+                <select class="select" id="regTurn">
+                  <option value="Día">Día</option>
+                  <option value="Noche">Noche</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="regDryer">Secadora</label>
+                <select class="select" id="regDryer">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="regSecadas">Secadas</label>
+              <input class="input" type="number" min="0" step="1" id="regSecadas" placeholder="Ingrese 0 o un número entero" />
+            </div>
+
+            <div class="field hidden" id="blockTime">
+              <label for="regAvgTime">Tiempo promedio de secada</label>
+              <input class="input" type="time" id="regAvgTime" step="60" />
+            </div>
+
+            <div class="field hidden" id="blockStop">
+              <label for="regStopHours">Horas de paro</label>
+              <input class="input" type="number" min="0" step="0.1" id="regStopHours" placeholder="Horas de paro" />
+            </div>
+
+            <div class="field hidden" id="blockCause">
+              <label for="regCause">Causa</label>
+              <input class="input" type="text" id="regCause" placeholder="Por qué no se generó" />
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-primary" id="saveRecordBtn">Guardar</button>
+              <button class="btn btn-secondary" id="exportCsvBtn">Exportar CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Consulta y visualización</h3>
+
+          <div class="stack">
+            <div class="row">
+              <div class="field">
+                <label for="searchBox">Buscar</label>
+                <input class="input" type="text" id="searchBox" placeholder="Buscar por usuario, causa o secadora" />
+              </div>
+              <div class="field">
+                <label for="filterDate">Filtrar por fecha</label>
+                <input class="input" type="date" id="filterDate" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="filterUser">Filtrar por usuario</label>
+              <select class="select" id="filterUser"></select>
+            </div>
+
+            <div class="chart-box">
+              <canvas id="chart"></canvas>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Fecha</th>
+                    <th>Turno</th>
+                    <th>Secadora</th>
+                    <th>Secadas</th>
+                    <th>Tiempo promedio</th>
+                    <th>Horas de paro</th>
+                    <th>Causa</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="recordsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="sectionUsers">
+      <div class="panel">
+        <h3>Gestión de usuarios</h3>
+        <div class="subtle">Visible solo para ADMIN.</div>
+
+        <div class="user-admin-card">
+          <div class="row">
+            <div class="field">
+              <label for="newUserName">Nuevo usuario</label>
+              <input class="input" id="newUserName" placeholder="Nombre de usuario" />
+            </div>
+            <div class="field">
+              <label for="newUserPass">Contraseña</label>
+              <input class="input" id="newUserPass" type="password" placeholder="Contraseña" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="newUserRole">Rol</label>
+              <select class="select" id="newUserRole">
+                <option value="operador">Operador</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="newUserActive">Estado</label>
+              <select class="select" id="newUserActive">
+                <option value="true">Habilitado</option>
+                <option value="false">Deshabilitado</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="createUserBtn">Crear usuario</button>
+          </div>
+        </div>
+
+        <div class="user-admin-card">
+          <div id="usersList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyDxDg_Wv7JIePhOAAR-ZXHIttaiT4SlF8A",
+  authDomain: "escaldado-paros.firebaseapp.com",
+  databaseURL: "https://escaldado-paros-default-rtdb.firebaseio.com",
+  projectId: "escaldado-paros",
+  storageBucket: "escaldado-paros.firebasestorage.app",
+  messagingSenderId: "137301198349",
+  appId: "1:137301198349:web:cb4681d31b1b3ede107744",
+  measurementId: "G-9N55RHM7B3"
+});
+
+const db = firebase.database();
+const usersRef = db.ref("users");
+const recordsRef = db.ref("records");
+
+const defaultUsers = {
+  "ADMIN":  { name:"ADMIN",  pass:"1234", role:"admin",    active:true },
+  "SELVIN": { name:"SELVIN", pass:"1234", role:"operador", active:true },
+  "GADIEL": { name:"GADIEL", pass:"1234", role:"operador", active:true },
+  "JOSE":   { name:"JOSE",   pass:"1234", role:"operador", active:true },
+  "ADANS":  { name:"ADANS",  pass:"1234", role:"operador", active:false },
+  "JUAN":   { name:"JUAN",   pass:"1234", role:"operador", active:false },
+  "OSCAR":  { name:"OSCAR",  pass:"1234", role:"operador", active:false }
+};
+
+const $ = (id) => document.getElementById(id);
+
+let users = {};
+let records = [];
+let currentUser = null;
+let editingRecordId = null;
+let chart = null;
+let usersReady = false;
+
+function clone(obj){
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function makeId(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeUser(value){
+  return String(value || "").trim().toUpperCase();
+}
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function showView(view){
+  $("loginView").classList.toggle("hidden", view !== "login");
+  $("appView").classList.toggle("hidden", view !== "app");
+}
+
+function setSection(sectionId){
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll("[data-section-btn]").forEach(b => b.classList.remove("active"));
+  $(sectionId).classList.add("active");
+  const btn = document.querySelector(`[data-section-btn="${sectionId}"]`);
+  if(btn) btn.classList.add("active");
+}
+
+function openPicker(input){
+  if(typeof input.showPicker === "function") input.showPicker();
+  else{
+    input.focus();
+    input.click();
+  }
+}
+
+function syncRecordFields(){
+  const value = $("regSecadas").value;
+
+  if(value === ""){
+    $("blockTime").classList.add("hidden");
+    $("blockStop").classList.add("hidden");
+    $("blockCause").classList.add("hidden");
+    return;
+  }
+
+  const secadas = Number(value);
+  const isZero = secadas === 0;
+  const isPositive = Number.isInteger(secadas) && secadas > 0;
+
+  $("blockTime").classList.toggle("hidden", !isPositive);
+  $("blockStop").classList.toggle("hidden", !isZero);
+  $("blockCause").classList.toggle("hidden", !isZero);
+
+  if(isPositive){
+    $("regStopHours").value = "";
+    $("regCause").value = "";
+  }
+  if(isZero){
+    $("regAvgTime").value = "";
+  }
+}
+
+function getVisibleRecords(){
+  if(!currentUser) return [];
+  const me = users[currentUser];
+  if(!me) return [];
+  if(me.role === "admin") return records.slice();
+  return records.filter(r => r.user === currentUser);
+}
+
+function refreshKPIs(list){
+  const total = list.reduce((acc, r) => acc + (Number(r.secadas) || 0), 0);
+  const stop = list.reduce((acc, r) => acc + (Number(r.stopHours) || 0), 0);
+  const cump = (total / 42) * 100;
+
+  $("kpiReal").textContent = total;
+  $("kpiHoras").textContent = stop;
+  $("kpiCumple").textContent = `${isFinite(cump) ? cump.toFixed(1) : "0.0"}%`;
+}
+
+function renderChart(list){
+  const byDate = {};
+  list.forEach(r => {
+    byDate[r.date] = (byDate[r.date] || 0) + (Number(r.secadas) || 0);
+  });
+
+  if(chart){
+    chart.destroy();
+    chart = null;
+  }
+
+  const ctx = $("chart").getContext("2d");
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: Object.keys(byDate).sort(),
+      datasets: [{
+        label: "Secadas",
+        data: Object.keys(byDate).sort().map(k => byDate[k]),
+        backgroundColor: "#F97316",
+        borderColor: "#F97316",
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#ffffff" } }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#c8d2dd" },
+          grid: { color: "rgba(255,255,255,.06)" }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: "#c8d2dd" },
+          grid: { color: "rgba(255,255,255,.06)" }
+        }
+      }
+    }
+  });
+}
+
+function renderTable(list){
+  const tbody = $("recordsBody");
+  tbody.innerHTML = "";
+
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="9" style="padding:16px;color:#c8d2dd;">No hay registros para mostrar.</td></tr>`;
+    return;
+  }
+
+  const isAdmin = users[currentUser] && users[currentUser].role === "admin";
+
+  list.forEach(r => {
+    const avgTime = r.secadas > 0 ? (r.avgTime || "—") : "—";
+    const stopHours = r.secadas === 0 ? (r.stopHours ?? "—") : "—";
+    const cause = r.secadas === 0 ? (r.cause || "—") : "—";
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${escapeHtml(r.user)}</td>
+        <td>${escapeHtml(r.date)}</td>
+        <td>${escapeHtml(r.turno)}</td>
+        <td>${escapeHtml(r.secadora)}</td>
+        <td>${escapeHtml(r.secadas)}</td>
+        <td>${escapeHtml(avgTime)}</td>
+        <td>${escapeHtml(stopHours)}</td>
+        <td>${escapeHtml(cause)}</td>
+        <td>
+          ${isAdmin ? `
+            <div class="table-actions">
+              <button class="btn btn-primary" onclick="editRecord('${escapeHtml(r.id)}')">Editar</button>
+              <button class="btn btn-danger" onclick="deleteRecord('${escapeHtml(r.id)}')">Eliminar</button>
+            </div>
+          ` : "—"}
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function renderUserFilter(){
+  const select = $("filterUser");
+  const allNames = Object.values(users).map(u => u.name);
+  const unique = [...new Set(allNames)];
+
+  select.innerHTML = `<option value="">Todos</option>`;
+  unique.forEach(name => {
+    select.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+  });
+}
+
+function renderUsersAdmin(){
+  const container = $("usersList");
+  const isAdmin = users[currentUser] && users[currentUser].role === "admin";
+
+  $("navUsersBtn").classList.toggle("hidden", !isAdmin);
+
+  if(!isAdmin){
+    container.innerHTML = "";
+    return;
+  }
+
+  const list = Object.values(users).sort((a,b) => {
+    if(a.name === "ADMIN") return -1;
+    if(b.name === "ADMIN") return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:1.2fr .8fr .8fr 1fr auto;gap:10px;color:var(--muted);font-size:.8rem;padding:2px 0 10px;">
+      <div>Usuario</div>
+      <div>Rol</div>
+      <div>Estado</div>
+      <div>Contraseña</div>
+      <div>Acción</div>
+    </div>
+  `;
+
+  list.forEach(u => {
+    const row = document.createElement("div");
+    row.className = "user-item";
+    row.innerHTML = `
+      <div>
+        <div style="font-weight:800;">
+          ${escapeHtml(u.name)}
+          ${u.role === "admin" ? `<span class="badge admin" style="margin-left:8px;">Administrador</span>` : `<span class="badge operador" style="margin-left:8px;">Operador</span>`}
+        </div>
+      </div>
+
+      <div>
+        <select class="select" data-role="${escapeHtml(u.name)}" ${u.name === "ADMIN" ? "disabled" : ""}>
+          <option value="operador" ${u.role === "operador" ? "selected" : ""}>Operador</option>
+          <option value="admin" ${u.role === "admin" ? "selected" : ""}>Administrador</option>
+        </select>
+      </div>
+
+      <div class="toggle-box">
+        <button class="switch ${u.active ? "on" : ""}" data-active="${escapeHtml(u.name)}" ${u.name === "ADMIN" ? "disabled" : ""}></button>
+        <span class="badge ${u.active ? (u.role === "admin" ? "admin" : "operador") : "disabled"}">${u.active ? "Activo" : "Deshabilitado"}</span>
+      </div>
+
+      <div>
+        <input class="input" data-pass="${escapeHtml(u.name)}" type="password" placeholder="Nueva contraseña" />
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" data-saveuser="${escapeHtml(u.name)}">Guardar</button>
+        ${u.name === "ADMIN" ? "" : `<button class="btn btn-danger" data-deluser="${escapeHtml(u.name)}">Eliminar</button>`}
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  container.querySelectorAll("[data-active]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const name = btn.getAttribute("data-active");
+      if(name === "ADMIN") return;
+      const updated = clone(users[name]);
+      updated.active = !updated.active;
+      await usersRef.child(name).set(updated);
+    });
+  });
+
+  container.querySelectorAll("[data-saveuser]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const name = btn.getAttribute("data-saveuser");
+      const roleSel = container.querySelector(`[data-role="${CSS.escape(name)}"]`);
+      const passInp = container.querySelector(`[data-pass="${CSS.escape(name)}"]`);
+      const newRole = roleSel ? roleSel.value : users[name].role;
+      const newPass = passInp ? passInp.value.trim() : "";
+
+      if(name === "ADMIN" && newRole !== "admin"){
+        alert("ADMIN siempre debe conservar rol de administrador.");
+        return;
+      }
+
+      const updated = clone(users[name]);
+      updated.role = newRole;
+      if(newPass) updated.pass = newPass;
+
+      await usersRef.child(name).set(updated);
+      if(passInp) passInp.value = "";
+      alert("Usuario actualizado.");
+    });
+  });
+
+  container.querySelectorAll("[data-deluser]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const name = btn.getAttribute("data-deluser");
+
+      if(name === currentUser){
+        alert("No puedes eliminar tu propio usuario.");
+        return;
+      }
+      if(!confirm(`¿Eliminar al usuario ${name}?`)) return;
+
+      await usersRef.child(name).remove();
+    });
+  });
+}
+
+function refreshAll(){
+  if(!currentUser){
+    renderUserFilter();
+    renderUsersAdmin();
+    return;
+  }
+
+  const base = getVisibleRecords();
+  const search = $("searchBox").value.trim().toLowerCase();
+  const filterDate = $("filterDate").value;
+  const filterUser = $("filterUser").value;
+
+  const filtered = base.filter(r => {
+    const matchesSearch =
+      !search ||
+      String(r.user || "").toLowerCase().includes(search) ||
+      String(r.cause || "").toLowerCase().includes(search) ||
+      String(r.secadora || "").includes(search) ||
+      String(r.turno || "").toLowerCase().includes(search);
+
+    const matchesDate = !filterDate || r.date === filterDate;
+    const matchesUser = !filterUser || r.user === filterUser;
+    return matchesSearch && matchesDate && matchesUser;
+  });
+
+  refreshKPIs(base);
+  renderTable(filtered);
+  renderChart(base);
+  renderUsersAdmin();
+}
+
+function clearRecordForm(){
+  $("regDate").value = "";
+  $("regTurn").value = "Día";
+  $("regDryer").value = "1";
+  $("regSecadas").value = "";
+  $("regAvgTime").value = "";
+  $("regStopHours").value = "";
+  $("regCause").value = "";
+  syncRecordFields();
+}
+
+function syncCurrentUserUI(){
+  const me = users[currentUser];
+  if(!me) return;
+
+  $("currentUserName").textContent = me.name;
+  $("currentUserMeta").textContent = me.role === "admin" ? "Administrador" : "Operador";
+  $("currentUserState").textContent = me.active ? "Activo" : "Deshabilitado";
+
+  $("navUsersBtn").classList.toggle("hidden", me.role !== "admin");
+
+  if(me.role !== "admin"){
+    $("sectionUsers").classList.remove("active");
+    setSection("sectionRecords");
+  }
+}
+
+async function login(){
+  if(!usersReady){
+    alert("Firebase todavía está cargando. Espera un momento.");
+    return;
+  }
+
+  const user = normalizeUser($("loginUser").value);
+  const pass = String($("loginPass").value || "");
+
+  if(!user || !pass){
+    alert("Datos incompletos.");
+    return;
+  }
+
+  const account = users[user];
+
+  if(!account){
+    alert("Usuario o contraseña incorrectos.");
+    return;
+  }
+  if(!account.active){
+    alert("Este usuario está deshabilitado.");
+    return;
+  }
+  if(account.pass !== pass){
+    alert("Usuario o contraseña incorrectos.");
+    return;
+  }
+
+  currentUser = user;
+  editingRecordId = null;
+  $("loginPass").value = "";
+  showView("app");
+  syncCurrentUserUI();
+  renderUserFilter();
+  renderUsersAdmin();
+  refreshAll();
+}
+
+function logout(){
+  currentUser = null;
+  editingRecordId = null;
+  $("loginPass").value = "";
+  $("loginUser").value = "";
+  showView("login");
+  renderUserFilter();
+  renderUsersAdmin();
+}
+
+async function saveRecord(){
+  if(!currentUser){
+    alert("Primero inicia sesión.");
+    return;
+  }
+
+  const date = $("regDate").value;
+  const turno = $("regTurn").value;
+  const secadora = Number($("regDryer").value);
+  const secadas = Number($("regSecadas").value);
+
+  if(!date){
+    alert("Selecciona una fecha.");
+    return;
+  }
+  if(!Number.isInteger(secadas) || secadas < 0){
+    alert("Secadas debe ser un número entero igual o mayor que 0.");
+    return;
+  }
+
+  const isZero = secadas === 0;
+  const isPositive = secadas > 0;
+
+  let avgTime = "";
+  let stopHours = 0;
+  let cause = "";
+
+  if(isZero){
+    stopHours = Number($("regStopHours").value);
+    cause = String($("regCause").value || "").trim();
+
+    if(!Number.isFinite(stopHours) || stopHours < 0){
+      alert("Ingresa horas de paro válidas.");
+      return;
+    }
+    if(!cause){
+      alert("Indica la causa.");
+      return;
+    }
+  }
+
+  if(isPositive){
+    avgTime = String($("regAvgTime").value || "").trim();
+    if(!avgTime){
+      alert("Selecciona el tiempo promedio de secada.");
+      return;
+    }
+  }
+
+  const record = {
+    id: editingRecordId || "",
+    user: currentUser,
+    date,
+    turno,
+    secadora,
+    secadas,
+    avgTime: isPositive ? avgTime : "",
+    stopHours: isZero ? stopHours : 0,
+    cause: isZero ? cause : "",
+    createdAt: new Date().toISOString()
+  };
+
+  if(editingRecordId){
+    record.id = editingRecordId;
+    await recordsRef.child(editingRecordId).set(record);
+    editingRecordId = null;
+  }else{
+    const newRef = recordsRef.push();
+    record.id = newRef.key;
+    await newRef.set(record);
+  }
+
+  clearRecordForm();
+}
+
+function editRecord(id){
+  const me = users[currentUser];
+  if(!me || me.role !== "admin"){
+    alert("Solo ADMIN puede editar.");
+    return;
+  }
+
+  const r = records.find(x => x.id === id);
+  if(!r) return;
+
+  editingRecordId = id;
+  $("regDate").value = r.date;
+  $("regTurn").value = r.turno;
+  $("regDryer").value = String(r.secadora);
+  $("regSecadas").value = String(r.secadas);
+  syncRecordFields();
+
+  if(r.secadas === 0){
+    $("regStopHours").value = r.stopHours ?? "";
+    $("regCause").value = r.cause || "";
+  }else{
+    $("regAvgTime").value = r.avgTime || "";
+  }
+
+  setSection("sectionRecords");
+  $("regDate").scrollIntoView({ behavior:"smooth", block:"center" });
+}
+
+async function deleteRecord(id){
+  const me = users[currentUser];
+  if(!me || me.role !== "admin"){
+    alert("Solo ADMIN puede eliminar.");
+    return;
+  }
+  if(!confirm("¿Eliminar este registro?")) return;
+
+  await recordsRef.child(id).remove();
+}
+
+function exportCsv(){
+  const list = getVisibleRecords();
+  const headers = ["Usuario","Fecha","Turno","Secadora","Secadas","Tiempo promedio","Horas de paro","Causa"];
+  const rows = list.map(r => [
+    r.user,
+    r.date,
+    r.turno,
+    r.secadora,
+    r.secadas,
+    r.avgTime || "",
+    r.stopHours ?? "",
+    r.cause || ""
+  ]);
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replaceAll('"','""')}"`).join(","))
+    .join("\n");
+
+  const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "reporte_planta_escaldado.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function createUser(){
+  const me = users[currentUser];
+  if(!me || me.role !== "admin"){
+    alert("Solo ADMIN puede crear usuarios.");
+    return;
+  }
+
+  const name = normalizeUser($("newUserName").value);
+  const pass = String($("newUserPass").value || "").trim();
+  const role = $("newUserRole").value;
+  const active = $("newUserActive").value === "true";
+
+  if(!name){
+    alert("Escribe un nombre de usuario.");
+    return;
+  }
+  if(!pass){
+    alert("Escribe una contraseña.");
+    return;
+  }
+  if(users[name]){
+    alert("Ese usuario ya existe.");
+    return;
+  }
+
+  const newUser = { name, pass, role, active };
+  await usersRef.child(name).set(newUser);
+
+  $("newUserName").value = "";
+  $("newUserPass").value = "";
+  $("newUserRole").value = "operador";
+  $("newUserActive").value = "true";
+}
+
+function bindEvents(){
+  $("loginBtn").addEventListener("click", login);
+  $("logoutBtn").addEventListener("click", logout);
+  $("saveRecordBtn").addEventListener("click", saveRecord);
+  $("exportCsvBtn").addEventListener("click", exportCsv);
+  $("createUserBtn").addEventListener("click", createUser);
+
+  $("regSecadas").addEventListener("input", syncRecordFields);
+  $("searchBox").addEventListener("input", refreshAll);
+  $("filterDate").addEventListener("change", refreshAll);
+  $("filterUser").addEventListener("change", refreshAll);
+
+  $("regDate").addEventListener("dblclick", () => openPicker($("regDate")));
+  $("filterDate").addEventListener("dblclick", () => openPicker($("filterDate")));
+
+  document.querySelectorAll("[data-section-btn]").forEach(btn => {
+    btn.addEventListener("click", () => setSection(btn.getAttribute("data-section-btn")));
+  });
+}
+
+function attachRealtimeListeners(){
+  usersRef.on("value", async (snapshot) => {
+    if(!snapshot.exists()){
+      await usersRef.set(defaultUsers);
+      return;
+    }
+
+    users = snapshot.val() || {};
+    usersReady = true;
+    renderUserFilter();
+
+    if(currentUser){
+      const me = users[currentUser];
+      if(!me || !me.active){
+        logout();
+        return;
+      }
+      syncCurrentUserUI();
+      renderUsersAdmin();
+      refreshAll();
+    }else{
+      renderUsersAdmin();
+    }
+  }, (error) => {
+    console.error("Error leyendo users:", error);
+    alert("Error leyendo usuarios desde Firebase.");
+  });
+
+  recordsRef.on("value", (snapshot) => {
+    records = snapshot.exists() ? Object.values(snapshot.val()) : [];
+    if(currentUser){
+      refreshAll();
+    }
+  }, (error) => {
+    console.error("Error leyendo records:", error);
+    alert("Error leyendo registros desde Firebase.");
+  });
+}
+
+window.editRecord = editRecord;
+window.deleteRecord = deleteRecord;
+
+function init(){
+  bindEvents();
+  attachRealtimeListeners();
+  syncRecordFields();
+  renderUserFilter();
+  showView("login");
+}
+
+init();
+</script>
+</body>
+</html>
